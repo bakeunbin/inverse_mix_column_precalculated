@@ -17,6 +17,7 @@ for (int j = 0 ; j < 4 ; j ++)
 	d [j] = (c [j] << 1) ^ (0x1b & h) ^ a [j];
 }
 ```
+It uses AES-NI's AESIMC instruction to verify the results of both pre-calculator function and regular function.
 # Sample result
 ## Hardware Spec.
 ```c++
