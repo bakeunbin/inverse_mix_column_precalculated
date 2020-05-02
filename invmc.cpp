@@ -100,7 +100,6 @@ void gml_inv_mix_column (uint8_t data [16])
 			if ((b & 1) != 0)
 				c ^= a;
 			
-			// 0xff if a[j]&0x80 != 0, 0x00 otherwise
 			uint8_t h = (uint8_t) ((signed char) a >> 7);
 
 			a = (a << 1) ^ (0x1b & h);
@@ -135,27 +134,21 @@ int main (int argc, char * argv [])
 		return 1;
 	}
 	
-	uint8_t data [16] = 
-	{ // This is from Wikipedia.
-		0x8e, 0x4d, 0xa1, 0xbc,
-		0x9f, 0xdc, 0x58, 0x9d,
-		0xc6, 0xc6, 0xc6, 0xc6,
-		0xd5, 0xd5, 0xd7, 0xd6	
-	}, aesni [16], pre [16], gmul [16];
+	uint8_t input [16], aesni [16], pre [16], gmul [16];
 
 	srand ((unsigned) time (NULL));
 
 	for (int i = 0 ; i < 16 ; i ++)
-	{ // But you are free to use any random data to test.
-		data [i] = (uint8_t) (rand () % 256);
+	{
+		input [i] = (uint8_t) (rand () % 256);
 	}
 
-	memcpy (aesni, data, 16);
-	memcpy (pre, data, 16);
-	memcpy (gmul, data, 16);
+	memcpy (aesni, input, 16);
+	memcpy (pre, input, 16);
+	memcpy (gmul, input, 16);
 
 	std::cout << "Test Vector: " << std::endl;
-	std::cout << data << std::endl << std::endl;
+	std::cout << input << std::endl << std::endl;
 
 	auto t0 = std::chrono::high_resolution_clock::now ();
 	asm_inv_mix_column (aesni);
