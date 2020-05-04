@@ -37,7 +37,7 @@
 	%define arg2 r8
 	%define arg3 r9
 %else
-	%error Unsupported bit
+	%error Unsupported format
 %endif
 section .text
 global check_aes_ni_support
