@@ -25,8 +25,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <cstring>
 #include <ciso646>
 
@@ -136,12 +135,12 @@ int main (int argc, char * argv [])
 	
 	uint8_t input [16], aesni [16], pre [16], gmul [16];
 
-	srand ((unsigned) time (NULL));
+	std::random_device rd;
+	std::mt19937 mt (rd ());
+	std::uniform_int_distribution <int> dist (0, 255);
 
 	for (int i = 0 ; i < 16 ; i ++)
-	{
-		input [i] = (uint8_t) (rand () % 256);
-	}
+		input [i] = (uint8_t) dist (mt);
 
 	memcpy (aesni, input, 16);
 	memcpy (pre, input, 16);
