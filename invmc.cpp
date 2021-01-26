@@ -118,19 +118,13 @@ int main (int argc, char * argv [])
 
 	auto t0 = std::chrono::high_resolution_clock::now ();
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
-	{
 		ni_inv_mix_column (&aesni [BLOCK_SIZE * i]);
-	}
 	auto t1 = std::chrono::high_resolution_clock::now ();
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
-	{
 		pre_inv_mix_column (&pre [BLOCK_SIZE * i]);
-	}
 	auto t2 = std::chrono::high_resolution_clock::now ();
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
-	{
 		gml_inv_mix_column (&gmul [BLOCK_SIZE * i]);
-	}
 	auto t3 = std::chrono::high_resolution_clock::now ();
 
 	auto duration = std::chrono::duration_cast <std::chrono::nanoseconds> (t1 - t0).count ();
