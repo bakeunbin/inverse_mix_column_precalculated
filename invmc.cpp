@@ -1,25 +1,6 @@
 /* 
- * MIT License
- *
- * Copyright (c) 2020 Eunbin Bak
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * I, Eunbin Bak, is not reliable for anything, but this code
+ * is free to use.
  */
 
 #include <iostream>
@@ -29,30 +10,11 @@
 #include <cstring>
 #include <ciso646>
 
-std::ostream & operator << (std::ostream & os, uint8_t data [16])
-{
-	for (int i = 0 ; i < 4 ; i ++)
-	{
-		std::cout << "0x";
-		std::cout << std::hex << std::setw (2) << std::setfill ('0') << (int) data [i * 4 + 0] << ", 0x";
-		std::cout << std::hex << std::setw (2) << std::setfill ('0') << (int) data [i * 4 + 1] << ", 0x";
-		std::cout << std::hex << std::setw (2) << std::setfill ('0') << (int) data [i * 4 + 2] << ", 0x";
-		std::cout << std::hex << std::setw (2) << std::setfill ('0') << (int) data [i * 4 + 3];
-
-		if (i < 3)
-		{
-			std::cout << ", " << std::endl;
-		}
-	}
-
-	return os;
-}
-
 extern "C" bool check_aes_ni_support ();
-extern "C" void asm_inv_mix_column (uint8_t data [16]);
+extern "C" void ni_inv_mix_column (uint8_t data [16]);
 
 // Precaculated Galois Field.
-void pre_inv_mix_column (uint8_t data [16])
+void pre_inv_mix_column (uint8_t data [16]) noexcept
 {
 	for (int i = 0 ; i < 4 ; i ++)
 	{
@@ -87,27 +49,27 @@ void pre_inv_mix_column (uint8_t data [16])
 	}
 }
 
-// Original with a full Galois Multiplication function.
-void gml_inv_mix_column (uint8_t data [16])
+static uint8_t gmul (uint8_t a, uint8_t b) noexcept
 {
-	auto gmul = [] (uint8_t a, uint8_t b)->uint8_t
+	uint8_t c = 0;
+
+	for (int i = 0 ; i < 8 ; i ++)
 	{
-		uint8_t c = 0;
+		if ((b & 1) != 0)
+			c ^= a;
+		
+		uint8_t h = (uint8_t) ((signed char) a >> 7);
 
-		for (int i = 0 ; i < 8 ; i ++)
-		{
-			if ((b & 1) != 0)
-				c ^= a;
-			
-			uint8_t h = (uint8_t) ((signed char) a >> 7);
+		a = (a << 1) ^ (0x1b & h);
+		b >>= 1;
+	}
 
-			a = (a << 1) ^ (0x1b & h);
-			b >>= 1;
-		}
+	return c;
+}
 
-		return c;
-	};
-
+// Original with a full Galois Multiplication function.
+void gml_inv_mix_column (uint8_t data [16]) noexcept
+{
 	for (int i = 0 ; i < 4 ; i ++)
 	{
 		uint8_t a [4];
@@ -125,6 +87,10 @@ void gml_inv_mix_column (uint8_t data [16])
 	}
 }
 
+#define BLOCK_SIZE 16
+#define BLOCK_COUNT 128
+#define VECTOR_SIZE (BLOCK_SIZE * BLOCK_COUNT)
+
 int main (int argc, char * argv [])
 {
 	if (not check_aes_ni_support ())
@@ -133,58 +99,63 @@ int main (int argc, char * argv [])
 		return 1;
 	}
 	
-	uint8_t input [16], aesni [16], pre [16], gmul [16];
+	uint8_t input [VECTOR_SIZE], aesni [VECTOR_SIZE], pre [VECTOR_SIZE], gmul [VECTOR_SIZE];
 
 	std::random_device rd;
 	std::mt19937 mt (rd ());
-	std::uniform_int_distribution <int> dist (0, 255);
+	std::uniform_int_distribution <uint8_t> dist (0, 255);
 
-	for (int i = 0 ; i < 16 ; i ++)
-		input [i] = (uint8_t) dist (mt);
+	for (int i = 0 ; i < VECTOR_SIZE ; i ++)
+		input [i] = dist (mt);
 
-	memcpy (aesni, input, 16);
-	memcpy (pre, input, 16);
-	memcpy (gmul, input, 16);
+	memcpy (aesni, input, VECTOR_SIZE);
+	memcpy (pre, input, VECTOR_SIZE);
+	memcpy (gmul, input, VECTOR_SIZE);
 
-	std::cout << "Test Vector: " << std::endl;
-	std::cout << input << std::endl << std::endl;
+	std::cout << "Block size  : " << BLOCK_SIZE << std::endl;
+	std::cout << "Block count : " << BLOCK_COUNT << std::endl;
+	std::cout << "Vector size : " << VECTOR_SIZE << std::endl;
 
 	auto t0 = std::chrono::high_resolution_clock::now ();
-	asm_inv_mix_column (aesni);
+	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
+	{
+		ni_inv_mix_column (&aesni [BLOCK_SIZE * i]);
+	}
 	auto t1 = std::chrono::high_resolution_clock::now ();
-	pre_inv_mix_column (pre);
+	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
+	{
+		pre_inv_mix_column (&pre [BLOCK_SIZE * i]);
+	}
 	auto t2 = std::chrono::high_resolution_clock::now ();
-	gml_inv_mix_column (gmul);
+	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
+	{
+		gml_inv_mix_column (&gmul [BLOCK_SIZE * i]);
+	}
 	auto t3 = std::chrono::high_resolution_clock::now ();
 
 	auto duration = std::chrono::duration_cast <std::chrono::nanoseconds> (t1 - t0).count ();
 
 	std::cout << "Inverse Mix Column (AES-NI): " << std::dec << (duration / 1000.0) << "μs" << std::endl;
-	std::cout << aesni << std::endl << std::endl;
 
 	duration = std::chrono::duration_cast <std::chrono::nanoseconds> (t2 - t1).count ();
 
 	std::cout << "Inverse Mix Column (Pre): " << std::dec << (duration / 1000.0) << "μs" << std::endl;
-	std::cout << pre << std::endl << std::endl;
 
-	duration = std::chrono::duration_cast <std::chrono::nanoseconds> (t3 - t2).count ();
-
-	std::cout << "Inverse Mix Column (GMul): " << std::dec << (duration / 1000.0) << "μs" << std::endl;
-	std::cout << gmul << std::endl << std::endl;
-
-	if (memcmp (aesni, pre, 16) != 0)
+	if (memcmp (aesni, pre, VECTOR_SIZE) != 0)
 	{
 		std::cerr << "Results of AES-NI and Pre do not match!" << std::endl;
 		return 2;
 	}
 
-	if (memcmp (pre, gmul, 16) != 0)
+	duration = std::chrono::duration_cast <std::chrono::nanoseconds> (t3 - t2).count ();
+
+	std::cout << "Inverse Mix Column (GMul): " << std::dec << (duration / 1000.0) << "μs" << std::endl;
+
+	if (memcmp (pre, gmul, VECTOR_SIZE) != 0)
 	{
 		std::cerr << "Results of Pre and GMul do not match!" << std::endl;
 		return 3;
 	}
-
-	std::cout << "Successful." << std::endl;
 
 	return 0;
 }
