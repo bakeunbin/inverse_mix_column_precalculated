@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+invmc
 
 # VSCode
 .vscode/**

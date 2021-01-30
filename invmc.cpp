@@ -1,5 +1,5 @@
 /* 
- * I, Eunbin Bak, is not reliable for anything, but this code
+ * I, Eunbin Bak, am not reliable for anything, but this code
  * is free to use.
  */
 
@@ -103,10 +103,10 @@ int main (int argc, char * argv [])
 
 	std::random_device rd;
 	std::mt19937 mt (rd ());
-	std::uniform_int_distribution <uint8_t> dist (0, 255);
+	std::uniform_int_distribution <uint32_t> dist (0, 255);
 
 	for (int i = 0 ; i < VECTOR_SIZE ; i ++)
-		input [i] = dist (mt);
+		input [i] = (uint8_t) dist (mt);
 
 	memcpy (aesni, input, VECTOR_SIZE);
 	memcpy (pre, input, VECTOR_SIZE);

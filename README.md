@@ -33,7 +33,7 @@ void inv_mix_column (uint8_t data [16])
 Essentially, ```d[n]``` is ```9*a[n]```, ```c[n]``` is ```4*a[n]```, and ```b[n]``` is ```2*a[n]```. 
 It simply adds and/or substracts (using ```xor```) elements of these arrays to get ```14*a[n]```, ```13*a[n]```, ```11*a[n]```, and ```9*a[n]```.
 
-```signed char``` is useful because we can easily spam an entire 8-bit variable with ```1```s when right shift is applied.
+```signed char``` is useful because we can broadcast an entire 8-bit variable with ```1```s when right shift is applied.
 
 It uses AES-NI's AESIMC instruction to verify the results of both pre-calculator function and regular function.
 # Sample result
