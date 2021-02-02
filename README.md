@@ -35,7 +35,6 @@ It simply adds and/or substracts (using ```xor```) elements of these arrays to g
 
 ```signed char``` is useful because we can broadcast an entire 8-bit variable with ```1```s when right shift is applied.
 
-It uses AES-NI's AESIMC instruction to verify the results of both pre-calculator function and regular function.
 # Sample result
 ## Hardware Spec.
 ```c++
@@ -51,11 +50,15 @@ clang++ -std=c++20 -O3 -o invmc invmc.cpp invmc.o
 ./invmc
 ```
 ## Result:
+The results are for just the decryption algorithm only.
+
 ```
-Block size  : 16
-Block count : 128
-Vector size : 2048
-Inverse Mix Column (AES-NI): 0.3μs
-Inverse Mix Column (Pre): 4.5μs
-Inverse Mix Column (GMul): 5.5μs
+Block size    : 16
+Block count   : 128
+Vector size   : 2048
+AES-NI        : 0.5μs
+Soft Precalc  : 53.3μs
+Soft GMul     : 71.6μs
 ```
+
+Just use AES-NI.
