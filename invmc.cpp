@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <chrono>
 #include <random>
-#include <bit>
+// #include <bit>
 #include <cstring>
 #include <ciso646>
 #include <cassert>
@@ -131,6 +131,7 @@ namespace aes::soft
 		}
 	}
 
+	// Inverse Mix Column based on regualr GMul function.
 	void inv_mc_gmul (uint8_t * data) noexcept
 	{
 		for (int i = 0 ; i < 4 ; i ++)
