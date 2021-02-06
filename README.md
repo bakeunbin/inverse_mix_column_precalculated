@@ -35,6 +35,8 @@ It simply adds and/or substracts (using ```xor```) elements of these arrays to g
 
 ```signed char``` is useful because we can broadcast an entire 8-bit variable with ```1```s when right shift is applied.
 
+The decryption algorithm implemented is vulnerable. To make things secure, the bitslice technique needs to be used.
+
 # Sample result
 ## Hardware Spec.
 ```c++
