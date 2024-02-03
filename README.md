@@ -40,10 +40,9 @@ The decryption algorithm implemented is vulnerable. To make things secure, the b
 # Sample result
 ## Hardware Spec.
 ```c++
-CPU: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 2.60
-RAM: 16.GB (15.8GB Usable)
-OS : Windows 10 Education, 1909, 64-bit operating system, x64-based processor.
-     Ubuntu 20.04 LTS, WSL2
+CPU: AMD Ryzen 9 7900X (24)
+RAM: 32 GB
+OS : Linux 6.7.2 (zen, x86-64)
 ```
 ## Command Lines
 ```
@@ -56,11 +55,11 @@ The results are for just the decryption algorithm only.
 
 ```
 Block size    : 16
-Block count   : 128
-Vector size   : 2048
-AES-NI        : 0.5μs
-Soft Precalc  : 53.3μs
-Soft GMul     : 71.6μs
+Block count   : 8192
+Vector size   : 131072
+AES-NI        : 13.305μs
+Soft Precalc  : 1631.12μs
+Soft GMul     : 2762.82μs
 ```
 
 Just use AES-NI.
