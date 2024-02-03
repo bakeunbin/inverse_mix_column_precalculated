@@ -17,7 +17,7 @@ extern "C" void aesni_keygen (const uint8_t key [16], uint8_t object [176]);
 extern "C" void full_aesni (uint8_t data [16], const uint8_t object [176]);
 
 #define BLOCK_SIZE 16
-#define BLOCK_COUNT 128
+#define BLOCK_COUNT 8192
 #define VECTOR_SIZE (BLOCK_SIZE * BLOCK_COUNT)
 #define AES_128_KEY_OBJ_SIZE (BLOCK_SIZE * 11)
 
@@ -96,7 +96,9 @@ namespace aes::soft
 	void inv_sr (uint8_t * data) noexcept
 	{
 		uint8_t temp [16];
+		
 		memcpy (temp, data, 16);
+		
 		data [ 0] = temp [ 0], data [ 1] = temp [13], data [ 2] = temp [10], data [ 3] = temp [ 7];
 		data [ 4] = temp [ 4], data [ 5] = temp [ 1], data [ 6] = temp [14], data [ 7] = temp [11];
 		data [ 8] = temp [ 8], data [ 9] = temp [ 5], data [10] = temp [ 2], data [11] = temp [15];
@@ -150,7 +152,9 @@ namespace aes::soft
 	void ar (uint8_t * input, const uint8_t obj [AES_128_KEY_OBJ_SIZE], int round)
 	{
 		for (int i = 0 ; i < 16 ; i ++)
+		{
 			input [i] ^= obj [16 * round + i];
+		}
 	}
 }
 
@@ -191,30 +195,42 @@ void mixed_gmul (uint8_t * data, const uint8_t obj [176])
 auto decrypt_full_aesni (const uint8_t obj [AES_128_KEY_OBJ_SIZE], uint8_t (& output) [VECTOR_SIZE], const uint8_t input [VECTOR_SIZE])
 {
 	memcpy (output, input, VECTOR_SIZE);
+	
 	auto start = std::chrono::high_resolution_clock::now ();
+	
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
 		full_aesni (output + BLOCK_SIZE * i, obj);
+	
 	auto end = std::chrono::high_resolution_clock::now ();
+	
 	return std::chrono::duration_cast <std::chrono::nanoseconds> (end - start).count ();
 }
 
 auto decrypt_mixed_precalc (const uint8_t obj [AES_128_KEY_OBJ_SIZE], uint8_t (& output) [VECTOR_SIZE], const uint8_t input [VECTOR_SIZE])
 {
 	memcpy (output, input, VECTOR_SIZE);
+	
 	auto start = std::chrono::high_resolution_clock::now ();
+	
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
 		mixed_precalc (output + BLOCK_SIZE * i, obj);
+	
 	auto end = std::chrono::high_resolution_clock::now ();
+	
 	return std::chrono::duration_cast <std::chrono::nanoseconds> (end - start).count ();
 }
 
 auto decrypt_mixed_gmul (const uint8_t obj [AES_128_KEY_OBJ_SIZE], uint8_t (& output) [VECTOR_SIZE], const uint8_t input [VECTOR_SIZE])
 {
 	memcpy (output, input, VECTOR_SIZE);
+	
 	auto start = std::chrono::high_resolution_clock::now ();
+	
 	for (size_t i = 0 ; i < BLOCK_COUNT ; i ++)
 		mixed_gmul (output + BLOCK_SIZE * i, obj);
+	
 	auto end = std::chrono::high_resolution_clock::now ();
+	
 	return std::chrono::duration_cast <std::chrono::nanoseconds> (end - start).count ();
 }
 
@@ -236,12 +252,16 @@ int main (int argc, char * argv [])
 	uint8_t fullni [VECTOR_SIZE], precalc [VECTOR_SIZE], gmul [VECTOR_SIZE];
 
 	for (auto & k : key)
+	{
 		k = (uint8_t) dist (mt);
-	
+	}
+
 	aesni_keygen (key, obj);
 	
 	for (auto & i : input)
+	{
 		i = (uint8_t) dist (mt);
+	}
 
 	auto fullni_t = decrypt_full_aesni (obj, fullni, input);
 	auto precalc_t = decrypt_mixed_precalc (obj, precalc, input);
@@ -254,8 +274,12 @@ int main (int argc, char * argv [])
 	std::cout << "Soft Precalc  : " << (precalc_t / 1000.0) << "μs" << std::endl;
 	std::cout << "Soft GMul     : " << (gmul_t / 1000.0) << "μs" << std::endl;
 
-	assert (not memcmp (fullni, precalc, VECTOR_SIZE));
-	assert (not memcmp (precalc, gmul, VECTOR_SIZE));
+	if (memcmp (fullni, precalc, VECTOR_SIZE) or memcmp (fullni, gmul, VECTOR_SIZE))
+	{
+		std::cerr << "Test result invalid: results different from AES-NI." << std::endl;
+		return 2;
+	}
 
 	return 0;
 }
+
